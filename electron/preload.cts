@@ -1,6 +1,8 @@
-const { contextBridge, ipcRenderer } = require('electron')
+import { contextBridge, ipcRenderer } from 'electron'
+import type { IpcRendererEvent } from 'electron'
+import type { KoraBridge, KoraState, SetupUpdate } from '../src/types.js'
 
-contextBridge.exposeInMainWorld('kora', {
+const bridge: KoraBridge = {
   getState: () => ipcRenderer.invoke('kora:get-state'),
   saveSettings: (settings) => ipcRenderer.invoke('kora:save-settings', settings),
   chooseFolder: () => ipcRenderer.invoke('kora:choose-folder'),
@@ -10,13 +12,15 @@ contextBridge.exposeInMainWorld('kora', {
   windowAction: (action) => ipcRenderer.invoke('kora:window-action', action),
   openExternal: (url) => ipcRenderer.invoke('kora:open-external', url),
   onState: (callback) => {
-    const listener = (_, value) => callback(value)
+    const listener = (_: IpcRendererEvent, value: KoraState) => callback(value)
     ipcRenderer.on('worker:state', listener)
     return () => ipcRenderer.removeListener('worker:state', listener)
   },
   onSetup: (callback) => {
-    const listener = (_, value) => callback(value)
+    const listener = (_: IpcRendererEvent, value: SetupUpdate) => callback(value)
     ipcRenderer.on('worker:setup', listener)
     return () => ipcRenderer.removeListener('worker:setup', listener)
   },
-})
+}
+
+contextBridge.exposeInMainWorld('kora', bridge)

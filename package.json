@@ -4,14 +4,18 @@
   "private": true,
   "type": "module",
   "description": "A little desktop for an ongoing AI worker",
-  "main": "electron/main.cjs",
+  "main": "dist-node/electron/main.cjs",
   "author": "Kora Worker",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
+    "prestart": "npm run build:node",
     "start": "electron .",
-    "build": "tsc --noEmit && vite build --configLoader runner",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "build:node": "tsc -p tsconfig.node.json",
+    "build": "tsc --noEmit && npm run build:node && vite build --configLoader runner",
     "dist": "npm run build && electron-builder --win portable --x64",
-    "test": "node --test electron/*.test.cjs"
+    "test": "npm run build:node && node --test dist-node/electron/*.test.cjs",
+    "capture": "npm run build && electron dist-node/scripts/capture.cjs"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
@@ -39,7 +43,8 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*",
+      "dist-node/electron/**/*",
+      "!dist-node/electron/**/*.test.*",
       "package.json"
     ],
     "asar": true,

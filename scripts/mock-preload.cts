@@ -1,7 +1,8 @@
-const { contextBridge } = require('electron')
+import { contextBridge } from 'electron'
+import type { KoraBridge, KoraState } from '../src/types.js'
 
 const now = new Date().toISOString()
-const state = {
+const state: KoraState = {
   settings: { provider: 'openai', model: 'gpt-5.6-terra', baseURL: '', openaiModel: 'gpt-5.6-terra', compatibleModel: '', compatibleBaseURL: '', hasApiKey: true, openaiHasApiKey: true, compatibleHasApiKey: false, keyStorage: 'encrypted' },
   jobMarkdown: '# Maintain the project README\n\nKeep the documentation accurate as the project evolves.\n\n## First steps\n\nInspect the repository and compare the README with the current features.',
   job: {
@@ -23,7 +24,7 @@ const state = {
   },
 }
 
-contextBridge.exposeInMainWorld('kora', {
+const bridge: KoraBridge = {
   getState: () => Promise.resolve(state),
   saveSettings: () => Promise.resolve(state.settings),
   chooseFolder: () => Promise.resolve(null),
@@ -34,4 +35,6 @@ contextBridge.exposeInMainWorld('kora', {
   openExternal: () => Promise.resolve(),
   onState: () => () => {},
   onSetup: () => () => {},
-})
+}
+
+contextBridge.exposeInMainWorld('kora', bridge)

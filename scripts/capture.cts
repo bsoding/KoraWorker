@@ -1,6 +1,6 @@
-const fs = require('node:fs')
-const path = require('node:path')
-const { app, BrowserWindow } = require('electron')
+import fs from 'node:fs'
+import path from 'node:path'
+import { app, BrowserWindow } from 'electron'
 
 const root = process.cwd()
 const userData = path.join(root, '.test-user-data')
@@ -9,7 +9,7 @@ app.setPath('userData', userData)
 
 app.whenReady().then(async () => {
   const active = process.argv.includes('--active')
-  const win = new BrowserWindow({ width: 1440, height: 900, show: true, backgroundColor: '#f7d1c8', webPreferences: active ? { preload: path.join(root, 'scripts', 'mock-preload.cjs'), contextIsolation: true, webviewTag: true, backgroundThrottling: false } : {} })
+  const win = new BrowserWindow({ width: 1440, height: 900, show: true, backgroundColor: '#f7d1c8', webPreferences: active ? { preload: path.join(__dirname, 'mock-preload.cjs'), contextIsolation: true, sandbox: false, webviewTag: true, backgroundThrottling: false } : {} })
   await win.loadFile(path.join(root, 'dist', 'index.html'))
   await new Promise((resolve) => setTimeout(resolve, 1200))
   if (!active && process.argv.includes('--compatible')) {

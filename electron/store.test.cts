@@ -1,24 +1,25 @@
-const test = require('node:test')
-const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const os = require('node:os')
-const path = require('node:path')
-const Module = require('node:module')
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import Module from 'node:module'
 
 test('existing OpenAI settings migrate and compatible credentials stay separate', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kora-settings-'))
   fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({ model: 'gpt-existing' }))
   fs.writeFileSync(path.join(root, 'api-key.bin'), Buffer.from('old-openai-key'))
-  const load = Module._load
-  Module._load = function (request, parent, isMain) {
+  const modules = Module as typeof Module & { _load: (request: string, parent: NodeJS.Module | undefined, isMain: boolean) => unknown }
+  const load = modules._load
+  modules._load = function (request, parent, isMain) {
     if (request === 'electron') return {
       app: { getPath: () => root },
-      safeStorage: { isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value), decryptString: (value) => value.toString() },
+      safeStorage: { isEncryptionAvailable: () => true, encryptString: (value: string) => Buffer.from(value), decryptString: (value: Buffer) => value.toString() },
     }
     return load.call(this, request, parent, isMain)
   }
-  let store
-  try { store = require('./store.cjs') } finally { Module._load = load }
+  let store: typeof import('./store.cjs')
+  try { store = require('./store.cjs') as typeof import('./store.cjs') } finally { modules._load = load }
   try {
     assert.equal(store.settings().provider, 'openai')
     assert.equal(store.settings().model, 'gpt-existing')

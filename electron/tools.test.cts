@@ -1,14 +1,15 @@
-const test = require('node:test')
-const assert = require('node:assert/strict')
-const fs = require('node:fs/promises')
-const os = require('node:os')
-const path = require('node:path')
-const { execute, activityFor } = require('./tools.cjs')
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { execute, activityFor } from './tools.cjs'
+import type { ActivityUpdate } from '../src/types.js'
 
 test('file tools work in the selected job workspace and emit visible output', async () => {
   const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'kora-tools-'))
-  const changes = []
-  const update = (change) => changes.push(change)
+  const changes: ActivityUpdate[] = []
+  const update = (change: ActivityUpdate) => changes.push(change)
   try {
     const written = await execute('write_file', { path: 'notes/hello.txt', content: 'hello Kora' }, { workspace }, update)
     assert.match(written, /Wrote .*hello\.txt/)

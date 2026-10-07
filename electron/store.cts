@@ -1,26 +1,27 @@
-const fs = require('node:fs')
-const path = require('node:path')
-const { app, safeStorage } = require('electron')
+import fs from 'node:fs'
+import path from 'node:path'
+import { app, safeStorage } from 'electron'
+import type { Job, KoraSettings, ProviderConfig, ProviderId, ProviderInput, StoredSettings } from '../src/types.js'
 
-const sessionKeys = { openai: '', compatible: '' }
+const sessionKeys: Record<ProviderId, string> = { openai: '', compatible: '' }
 
-function dataRoot() {
+export function dataRoot() {
   const root = app.getPath('userData')
   fs.mkdirSync(root, { recursive: true })
   return root
 }
 
-function readJson(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback }
+function readJson<T>(file: string, fallback: T): T {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')) as T } catch { return fallback }
 }
 
-function writeJson(file, value) {
+function writeJson(file: string, value: unknown) {
   const temp = `${file}.tmp`
   fs.writeFileSync(temp, JSON.stringify(value, null, 2), 'utf8')
   fs.renameSync(temp, file)
 }
 
-function normalizeBaseURL(raw) {
+export function normalizeBaseURL(raw: string | undefined) {
   let url
   try { url = new URL(String(raw || '').trim()) } catch { throw new Error('Enter a valid API base URL, such as http://localhost:11434/v1.') }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
@@ -31,8 +32,8 @@ function normalizeBaseURL(raw) {
   return url.toString().replace(/\/$/, '')
 }
 
-function settings() {
-  const saved = readJson(path.join(dataRoot(), 'settings.json'), {})
+export function settings(): StoredSettings & ProviderConfig & { baseURL: string } {
+  const saved = readJson<Partial<StoredSettings> & { model?: string }>(path.join(dataRoot(), 'settings.json'), {})
   const provider = saved.provider === 'compatible' ? 'compatible' : 'openai'
   const openaiModel = saved.openaiModel || saved.model || 'gpt-5.6-terra'
   const compatibleModel = saved.compatibleModel || ''
@@ -47,7 +48,7 @@ function settings() {
   }
 }
 
-function apiKey(provider = settings().provider) {
+export function apiKey(provider: ProviderId = settings().provider) {
   if (sessionKeys[provider]) return sessionKeys[provider]
   const filenames = provider === 'openai' ? ['openai-api-key.bin', 'api-key.bin'] : ['compatible-api-key.bin']
   if (safeStorage.isEncryptionAvailable()) {
@@ -61,7 +62,7 @@ function apiKey(provider = settings().provider) {
   return provider === 'openai' ? process.env.OPENAI_API_KEY || '' : process.env.KORA_COMPATIBLE_API_KEY || ''
 }
 
-function saveSettings(input) {
+export function saveSettings(input: Partial<ProviderInput>): KoraSettings {
   const previous = settings()
   const provider = input.provider === 'compatible' ? 'compatible' : 'openai'
   const model = String(input.model || '').trim()
@@ -85,7 +86,7 @@ function saveSettings(input) {
   return publicSettings()
 }
 
-function publicSettings() {
+export function publicSettings(): KoraSettings {
   return {
     ...settings(),
     hasApiKey: Boolean(apiKey()),
@@ -96,12 +97,10 @@ function publicSettings() {
 }
 
 function jobPath() { return path.join(dataRoot(), 'job.json') }
-function loadJob() { return readJson(jobPath(), null) }
-function saveJob(job) { writeJson(jobPath(), job) }
+export function loadJob() { return readJson<Job | null>(jobPath(), null) }
+export function saveJob(job: Job) { writeJson(jobPath(), job) }
 function jobMarkdownPath() { return path.join(dataRoot(), 'JOB.md') }
-function saveJobMarkdown(markdown) { fs.writeFileSync(jobMarkdownPath(), markdown, 'utf8') }
-function loadJobMarkdown() {
+export function saveJobMarkdown(markdown: string) { fs.writeFileSync(jobMarkdownPath(), markdown, 'utf8') }
+export function loadJobMarkdown() {
   try { return fs.readFileSync(jobMarkdownPath(), 'utf8') } catch { return '' }
 }
-
-module.exports = { dataRoot, apiKey, settings, publicSettings, saveSettings, normalizeBaseURL, loadJob, saveJob, loadJobMarkdown, saveJobMarkdown }

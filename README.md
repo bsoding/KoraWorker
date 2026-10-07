@@ -19,10 +19,12 @@ This first version has one job. Kora's `JOB.md`, messages, activities, settings,
 
 ## Development
 
-- `npm run build` checks TypeScript and builds the renderer.
-- `npm start` runs the latest built renderer in Electron.
+- `npm run typecheck` checks the renderer, Electron runtime, tests, and helper scripts with strict TypeScript.
+- `npm run build` compiles the native TypeScript into `dist-node/` and builds the renderer into `dist/`.
+- `npm start` compiles the native runtime and runs the latest built renderer in Electron; run `npm run build` first.
 - `npm run dev` serves the renderer for visual development; native worker features require Electron.
-- `npm test` runs local tool tests.
+- `npm test` compiles and runs the local provider, persistence, tools, and worker tests.
+- `npm run capture -- --active` builds and captures the mock desktop in Electron.
 - `npm run dist` rebuilds and packages the latest source as a Windows `.exe`.
 
-The app uses Electron for the native runtime and React and Vite for the desktop UI. The provider adapter in `electron/provider.cjs` uses Responses for OpenAI and Chat Completions for compatible servers. Native tools and activity metadata are registered together in `electron/tools.cjs`, leaving a straightforward place for later capabilities.
+The app uses TypeScript throughout its Electron runtime, React UI, tests, and screenshot helpers. Native sources use `.cts` so TypeScript emits the `.cjs` modules required by the Electron preload and the existing CommonJS runtime. Electron starts from `dist-node/electron/main.cjs`; packaging includes the compiled runtime and renderer. The provider adapter in `electron/provider.cts` uses Responses for OpenAI and Chat Completions for compatible servers. Native tools and activity metadata are registered together in `electron/tools.cts`, leaving a straightforward place for later capabilities.
